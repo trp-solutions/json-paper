@@ -19,6 +19,12 @@
 | GND |                 GND |
 | VCC |                  5V |
 
+
+| Accessory connection | ESP32-C5 connection |
+|----------------------|--------------------:|
+| Setup button         |               GPIO5 |
+| Setup button GND     |                 GND |
+
 ## Pie charts
 
 Use one `draw_pie_slice` command for each colored section. Every slice accepts:
