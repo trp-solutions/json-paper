@@ -1,0 +1,38 @@
+{
+    "version": "2.0",
+    "commands": [
+        {
+            "cmd": "clear",
+            "args": {
+                "color": "white"
+            }
+        },
+        {
+            "cmd": "draw_text",
+            "args": {
+                "x": 0,
+                "y": 50,
+                "width": 792,
+                "height": 50,
+                "spans": [
+                    {
+                        "text": "-- Hello World --",
+                        "family": "helvetica",
+                        "weight": "regular",
+                        "size": 50,
+                        "color": "black",
+                        "letter_spacing": 0,
+                        "underline": false,
+                        "strikeout": false
+                    }
+                ],
+                "background": "transparent",
+                "horizontal_align": "center",
+                "vertical_align": "top",
+                "wrap": "word",
+                "overflow": "ellipsis",
+                "line_spacing": 0
+            }
+        }
+    ]
+}
