@@ -9,20 +9,20 @@
 
 | E-paper connection | ESP32-C5 connection |
 |---|--------------------:|
-| PWR |               GPIO4 |
-| BUSY |              GPIO24 |
-| RST |              GPIO23 |
-| DC |               GPIO9 |
+| PWR |               GPIO5 |
+| BUSY |              GPIO9 |
+| RST |              GPIO8 |
+| DC |               GPIO4 |
 | CS |              GPIO10 |
 | CLK |               GPIO6 |
-| DIN |               GPIO8 |
+| DIN |               GPIO7 |
 | GND |                 GND |
 | VCC |                  5V |
 
 
 | Accessory connection | ESP32-C5 connection |
 |----------------------|--------------------:|
-| Setup button         |               GPIO5 |
+| Setup button         |               GPIO0 |
 | Setup button GND     |                 GND |
 
 ## Pie charts

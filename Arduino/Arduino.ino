@@ -17,7 +17,7 @@ char ssid[] = CONFIG_AP_SSID;
 char pass[] = CONFIG_AP_PASSWORD;
 
 #define RGB_LED_PIN 27
-#define BUTTON_PIN 5
+#define BUTTON_PIN 0
 #define EEPROM_SIZE 512
 #define SETTINGS_NAMESPACE "json-paper"
 #define SETTINGS_VERSION 1
@@ -26,7 +26,7 @@ char pass[] = CONFIG_AP_PASSWORD;
 // Temporary diagnostic setting. Change to 0 to restore dual-band selection.
 #define FORCE_WIFI_2_4_GHZ 0
 
-const char *DEFAULT_JSON_URL = "http://192.168.11.60:8080/";
+const char *DEFAULT_JSON_URL = "https://raw.githubusercontent.com/trp-solutions/json-paper/refs/heads/main/Server/hello-world.json";
 const char *DEFAULT_CRON = "0 * * * *";
 const char *COPENHAGEN_TZ = "CET-1CEST,M3.5.0,M10.5.0/3";
 

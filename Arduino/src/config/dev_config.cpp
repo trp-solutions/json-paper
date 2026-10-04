@@ -64,7 +64,7 @@ UBYTE DEV_Module_Init(void)
 
 	// spi
 	SPI.begin(EPD_SCK_PIN, -1, EPD_MOSI_PIN, EPD_CS_PIN);
-    SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+	SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
 
 	return 0;
 }
