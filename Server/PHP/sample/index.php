@@ -1,13 +1,15 @@
 <?php
 require_once __DIR__."/../lib/Display.php";
 
+date_default_timezone_set('Europe/Copenhagen');
+
 const DEVICE_FONT = 'helvetica';
 
 $display = new Display();
 
 $img = new \Imagick();
 
-$img->setResolution(30, 30);
+$img->setResolution(60, 60);
 
 $img->setOption('svg:antialias', 'false');
 $img->setOption('svg:shape-rendering', 'crispEdges');
@@ -38,8 +40,8 @@ $display
 	->clear(Color::WHITE)
 
 	->image(
-		x: 5,
-		y: 5,
+		x: 20,
+		y: 20,
 		img: $img,
 		transparent: Color::TRANSPARENT
 	)
@@ -72,33 +74,33 @@ $display
 	)
 
 	->circle(
-		x: 175,
-		y: 157,
-		radius: 7,
+		x: 190,
+		y: 155,
+		radius: 10,
 		color: Color::RED,
 		fill: FillMode::FULL
 	)
-	->text(new TextBox(195, 150, 100, 24, [new TextSpan("Todo", family: DEVICE_FONT, color: Color::RED)]))
+	->text(new TextBox(215, 150, 100, 24, [new TextSpan("Todo", family: DEVICE_FONT)]))
 
 	->circle(
-		x: 175,
-		y: 187,
-		radius: 7,
+		x: 190,
+		y: 185,
+		radius: 10,
 		color: Color::YELLOW,
 		fill: FillMode::FULL
 	)
 
-	->text(new TextBox(195, 180, 110, 24, [new TextSpan("Awaiting", family: DEVICE_FONT, color: Color::YELLOW)]))
+	->text(new TextBox(215, 180, 110, 24, [new TextSpan("Awaiting", family: DEVICE_FONT)]))
 
 	->circle(
-		x: 175,
-		y: 217,
-		radius: 7,
+		x: 190,
+		y: 215,
+		radius: 10,
 		color: Color::BLACK,
 		fill: FillMode::FULL
 	)
 
-	->text(new TextBox(195, 210, 110, 24, [new TextSpan("Finished", family: DEVICE_FONT)]));
+	->text(new TextBox(215, 210, 110, 24, [new TextSpan("Finished", family: DEVICE_FONT)]));
 
 $week_1_work_hours = [
 	$mon_1_work_hours,
@@ -201,9 +203,9 @@ $total_work_hours = array_sum($work_hours);
 $total_projects = $total_task_count;
 
 $display
-	->text(new TextBox(320, 210, 300, 24,
-		[new TextSpan("Total hours spend: " . $total_work_hours, family: DEVICE_FONT)]))
-	->text(new TextBox(320, 240, 300, 24,
-		[new TextSpan("Total Projects: " . $total_projects, family: DEVICE_FONT)]));
+	->text(new TextBox(320, 210, 400, 23,
+		[new TextSpan("Last update: " . date('Y-m-d H:i:s'), size: 24, family: DEVICE_FONT)]))
+	->text(new TextBox(320, 240, 400, 23,
+		[new TextSpan("Total Projects: " . $total_projects, size: 24, family: DEVICE_FONT)]));
 
 $display->output();
