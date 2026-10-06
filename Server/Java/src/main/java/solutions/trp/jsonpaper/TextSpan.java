@@ -29,14 +29,14 @@ public record TextSpan(
     }
 
     public TextSpan(String text, int size, Color color) {
-        this(text, "sans", FontWeight.REGULAR, size, color, 0, false, false);
+        this(text, "helvetica", FontWeight.REGULAR, size, color, 0, false, false);
     }
 
     public static Builder builder(String text) { return new Builder(text); }
 
     public static final class Builder {
         private final String text;
-        private String family = "sans";
+        private String family = "helvetica";
         private FontWeight weight = FontWeight.REGULAR;
         private int size = 16;
         private Color color = Color.BLACK;

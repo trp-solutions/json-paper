@@ -1,3 +1,7 @@
+# JSON Paper
+
+See the [GitHub wiki](https://github.com/TRP-Solutions/json-paper/wiki) for project documentation.
+
 ## Hardware
 
 | Brand | Model |

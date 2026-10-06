@@ -12,6 +12,7 @@
 #include "src/e-paper/paper_command.h"
 #include "src/network/request.h"
 #include "logo.h"
+#include "templates/status.h"
 
 char ssid[] = CONFIG_AP_SSID;
 char pass[] = CONFIG_AP_PASSWORD;
@@ -76,6 +77,7 @@ void ButtonClick();
 void APConnect();
 void updateLED();
 void runRefreshCycle();
+int paintCommands(const std::vector<PaperCommand>& commands);
 String formValue(const String& body, const String& name);
 bool isValidEndpoint(const String& value);
 bool parseCron(String expression, CronSchedule& schedule, String& error);
@@ -151,20 +153,16 @@ int EPD_5in79g_paint(void) {
   // same time can exhaust the ESP32-C5 heap.
   Serial.println("Requesting drawing commands");
   std::vector<PaperCommand> commands = Request::RequestConfig(endpoint.c_str());
-  if (commands.empty()) {
-    Serial.println("No drawing commands received; keeping current display");
-    return -1;
-  }
+  return paintCommands(commands);
+}
 
+
+int paintCommands(const std::vector<PaperCommand>& commands) {
   if (DEV_Module_Init() != 0) {
     return -1;
   }
 
   EPD_5in79g_Init();
-
-  // Clear screen
-  EPD_5in79g_Clear(EPD_5in79G_WHITE);
-  DEV_Delay_ms(500);
 
   // Create a new image cache named IMAGE_BW and fill it with white
   UBYTE *BlackImage;
@@ -176,6 +174,8 @@ int EPD_5in79g_paint(void) {
   }
   if (BlackImage == NULL) {
     Serial.println("Failed to apply for black memory...\r\n");
+    EPD_5in79g_Sleep();
+    DEV_Module_Exit();
     return -1;
   }
   Serial.println(
@@ -298,6 +298,7 @@ void APConnect() {
     if (!WiFi.softAPConfig(apAddress, apAddress, subnet) ||
         !WiFi.softAP(ssid, pass)) {
       Serial.println("Creating access point failed");
+      if (!connectFail) paintCommands(Templates::otherError("Could not start the setup access point."));
       connectFail = true;
       updateLED();
       return;
@@ -312,6 +313,8 @@ void APConnect() {
 
     // You're connected now, so print out the status
     printWiFiStatus();
+    paintCommands(Templates::setup(ssid, pass,
+      std::string("http://") + WiFi.softAPIP().toString().c_str()));
   }
 
 
@@ -854,6 +857,7 @@ void sleepUntilNextCron(time_t now) {
   String error;
   if (!parseCron(cronExpression, schedule, error)) {
     Serial.println(("Stored cron is invalid: " + error).c_str());
+    paintCommands(Templates::otherError("The saved refresh schedule is invalid."));
     enterDeepSleep(CLOCK_RETRY_SECONDS);
     return;
   }
@@ -861,6 +865,7 @@ void sleepUntilNextCron(time_t now) {
   time_t next = nextCronTime(schedule, now);
   if (next == 0 || next <= now) {
     Serial.println("Could not calculate the next cron occurrence");
+    paintCommands(Templates::otherError("Could not calculate the next refresh time."));
     enterDeepSleep(CLOCK_RETRY_SECONDS);
     return;
   }
@@ -878,6 +883,8 @@ void sleepUntilNextCron(time_t now) {
 
 void runRefreshCycle() {
   if (!WiFiConnect()) {
+    if (configMode) return;
+    paintCommands(Templates::otherError("Could not connect to WiFi. Check the network settings."));
     time_t now = time(nullptr);
     if (now >= VALID_CLOCK_EPOCH) {
       sleepUntilNextCron(now);
@@ -888,6 +895,7 @@ void runRefreshCycle() {
   }
 
   if (!ensureClockIsValid()) {
+    paintCommands(Templates::otherError("Could not synchronize the clock. Will retry later."));
     enterDeepSleep(CLOCK_RETRY_SECONDS);
     return;
   }

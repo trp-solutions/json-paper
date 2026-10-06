@@ -9,9 +9,49 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DisplayTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void writesTransformsAndPixelsWithFirmwareFieldNames() throws Exception {
+        JsonNode root = objectMapper.readTree(new Display()
+            .setRotate(90).setMirroring(3).setPixel(12, 13, Color.RED).toJson());
+        assertEquals("set_rotate", root.at("/commands/0/cmd").textValue());
+        assertEquals(90, root.at("/commands/0/args/rotate").intValue());
+        assertEquals("set_mirroring", root.at("/commands/1/cmd").textValue());
+        assertEquals(3, root.at("/commands/1/args/mirror").intValue());
+        assertEquals("set_pixel", root.at("/commands/2/cmd").textValue());
+        assertEquals(12, root.at("/commands/2/args/x").intValue());
+        assertEquals(13, root.at("/commands/2/args/y").intValue());
+        assertEquals("red", root.at("/commands/2/args/color").textValue());
+        assertThrows(IllegalArgumentException.class, () -> new Display().setRotate(45));
+        assertThrows(IllegalArgumentException.class, () -> new Display().setMirroring(4));
+        assertThrows(IllegalArgumentException.class,
+            () -> new Display().setPixel(0, 0, Color.TRANSPARENT));
+    }
+
+    @Test
+    void richTextSampleCoversFirmwareCommandsAndRasterFooter() throws Exception {
+        DisplayDocument sample = RichTextSample.create(
+            new java.awt.image.BufferedImage(120, 36, java.awt.image.BufferedImage.TYPE_INT_ARGB),
+            new RasterFontFamily(
+                java.nio.file.Path.of("../../Arduino/src/font/assets/Helvetica-Regular.ttf"),
+                java.nio.file.Path.of("../../Arduino/src/font/assets/Helvetica-Bold.ttf")));
+        assertEquals(java.util.Set.of("clear", "clear_window", "set_rotate", "set_mirroring",
+            "set_pixel", "draw_point", "draw_line", "draw_rectangle", "draw_circle",
+            "draw_pie_slice", "draw_image", "draw_text"), sample.commands().stream()
+                .map(DisplayCommand::cmd).collect(java.util.stream.Collectors.toSet()));
+        byte[] json = objectMapper.writeValueAsBytes(sample);
+        assertTrue(json.length <= Display.MAX_DOCUMENT_BYTES);
+        DisplayCommand footer = sample.commands().get(sample.commands().size() - 1);
+        assertEquals("draw_image", footer.cmd());
+        assertEquals(370 * 20 / 2, java.util.Base64.getDecoder()
+            .decode((String) footer.args().get("data")).length);
+        assertEquals(19, RichTextSample.create().commands().size());
+        assertEquals("helvetica", new TextSpan("default", 16, Color.BLACK).family());
+    }
 
     @Test
     void writesEveryPhpCommandWithFirmwareFieldNames() throws Exception {
@@ -43,7 +83,7 @@ class DisplayTest {
             "A \"quoted\" value",
             root.at("/commands/7/args/spans/0/text").textValue()
         );
-        assertEquals("sans", root.at("/commands/7/args/spans/0/family").textValue());
+        assertEquals("helvetica", root.at("/commands/7/args/spans/0/family").textValue());
         assertEquals(
             "transparent",
             root.at("/commands/7/args/background").textValue()

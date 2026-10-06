@@ -20,6 +20,32 @@ public final class Display {
 
     private final List<DisplayCommand> commands = new ArrayList<>();
 
+    public Display setRotate(int rotate) {
+        if (rotate != 0 && rotate != 90 && rotate != 180 && rotate != 270) {
+            throw new IllegalArgumentException("rotation must be 0, 90, 180, or 270 degrees");
+        }
+        return add("set_rotate", args("rotate", rotate));
+    }
+
+    /** Mirror modes: 0 none, 1 horizontal, 2 vertical, 3 both axes. */
+    public Display setMirroring(int mirror) {
+        if (mirror < 0 || mirror > 3) {
+            throw new IllegalArgumentException("mirror must be 0-3");
+        }
+        return add("set_mirroring", args("mirror", mirror));
+    }
+
+    public Display setPixel(int x, int y) {
+        return setPixel(x, y, Color.BLACK);
+    }
+
+    public Display setPixel(int x, int y, Color color) {
+        if (color == Color.TRANSPARENT) {
+            throw new IllegalArgumentException("pixel color cannot be transparent");
+        }
+        return add("set_pixel", args("x", x, "y", y, "color", color));
+    }
+
     public Display clear(Color color) {
         return add("clear", args(
             "color", color

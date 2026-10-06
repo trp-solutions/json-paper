@@ -1,221 +1,110 @@
 #include "request.h"
+#include "timed_client.h"
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <cstdlib>
+#include <cerrno>
 
 #include "../e-paper/paper_command.h"
+#include "../../templates/status.h"
 
-WiFiClient httpClient;
-WiFiClientSecure httpsClient;
+namespace {
+constexpr int requestTimeoutMs = 5000;
+constexpr unsigned long responseTimeoutMs = 30000;
+constexpr size_t maxResponseBytes = 128 * 1024;
 
-WiFiClient* client;
+// HTTPClient decodes chunked responses into this bounded buffer. Avoid an
+// intermediate Arduino String copy of potentially large base64 image data.
+class ResponseBuffer : public Stream {
+public:
+    std::string body;
+    bool tooLarge = false;
 
-int port = 0;
-std::string protocol;
-
-
-// Url parser
-std::string NormalizeHost(std::string addr, std::string& path) {
-
-    path = "/";
-
-    if (addr.rfind("https://", 0) == 0) {
-
-        addr = addr.substr(8);
-
-        protocol = "HTTPS";
-        port = 443;
-
-        client = &httpsClient;
-        // Provisioning currently has no CA-certificate mechanism.
-        httpsClient.setInsecure();
-    }
-    else if (addr.rfind("http://", 0) == 0) {
-
-        addr = addr.substr(7);
-
-        protocol = "HTTP";
-        port = 80;
-
-        client = &httpClient;
-    }
-    else {
-        protocol = "HTTP";
-        port = 80;
-        client = &httpClient;
-    }
-
-    size_t slashPos = addr.find('/');
-
-    if (slashPos != std::string::npos) {
-        path = addr.substr(slashPos);
-        addr = addr.substr(0, slashPos);
-    }
-
-    // An explicit port overrides the protocol default. Hostnames and IPv4
-    // addresses are supported; bracketed IPv6 literals are not.
-    size_t colonPos = addr.rfind(':');
-    if (colonPos != std::string::npos) {
-        std::string portText = addr.substr(colonPos + 1);
-        char* end = nullptr;
-        long parsedPort = std::strtol(portText.c_str(), &end, 10);
-
-        if (!portText.empty() && end != nullptr && *end == '\0' &&
-            parsedPort >= 1 && parsedPort <= 65535) {
-            port = static_cast<int>(parsedPort);
-            addr = addr.substr(0, colonPos);
-        } else {
-            Serial.println("Invalid port in JSON URL");
-            addr.clear();
+    size_t write(uint8_t value) override { return write(&value, 1); }
+    size_t write(const uint8_t* data, size_t size) override {
+        if (size > maxResponseBytes - body.size()) {
+            tooLarge = true;
+            return 0;
         }
+        body.append(reinterpret_cast<const char*>(data), size);
+        return size;
     }
+    int available() override { return 0; }
+    int read() override { return -1; }
+    int peek() override { return -1; }
+    void flush() override {}
+};
+} // namespace
 
-    return addr;
-}
-
-
-// Http
-std::string httpGet(std::string host, std::string path) {
-
-    std::string response;
-
-    if (host.empty()) {
-        Serial.println("Invalid JSON URL");
-        return response;
-    }
-
-    Serial.println((protocol + " connecting...").c_str());
-
-    if (client->connect(host.c_str(), port)) {
-
-        Serial.println((protocol + " OK").c_str());
-
-        client->print("GET ");
-        client->print(path.c_str());
-        client->println(" HTTP/1.1");
-        client->print("Host: ");
-        client->print(host.c_str());
-        if ((protocol == "HTTP" && port != 80) ||
-            (protocol == "HTTPS" && port != 443)) {
-            client->print(":");
-            client->print(port);
-        }
-        client->println();
-        client->println("Connection: close");
-        client->println();
-
-        size_t contentLength = 0;
-        unsigned long lastDataTime = millis();
-        const unsigned long responseIdleTimeoutMs = 5000;
-        const size_t maxResponseBytes = 128 * 1024;
-
-        // Headers are short, line-oriented fields. Stop using line reads as
-        // soon as the blank separator is reached: a base64 JSON value can be
-        // one very large line and would fragment the Arduino String heap.
-        while (client->connected() || client->available()) {
-            if (!client->available()) {
-                if (millis() - lastDataTime >= responseIdleTimeoutMs) {
-                    Serial.println("HTTP header timeout");
-                    client->stop();
-                    return {};
-                }
-                delay(10);
-                continue;
-            }
-
-            String line = client->readStringUntil('\n');
-            lastDataTime = millis();
-
-            if (line.startsWith("Content-Length:")) {
-                contentLength = static_cast<size_t>(line.substring(15).toInt());
-                if (contentLength > maxResponseBytes) {
-                    Serial.println("HTTP response is too large");
-                    client->stop();
-                    return {};
-                }
-            }
-
-            if (line == "\r") {
-                break;
-            }
-        }
-
-        if (contentLength > 0) {
-            response.reserve(contentLength);
-        }
-
-        // Read the body in bounded chunks so a long base64 line never creates
-        // a second, repeatedly-growing Arduino String.
-        char buffer[512];
-        lastDataTime = millis();
-        while (client->connected() || client->available()) {
-            int availableBytes = client->available();
-            if (availableBytes <= 0) {
-                if (millis() - lastDataTime >= responseIdleTimeoutMs) {
-                    Serial.println("HTTP response idle timeout; processing received data");
-                    break;
-                }
-                delay(10);
-                continue;
-            }
-
-            size_t bytesToRead = static_cast<size_t>(availableBytes);
-            if (bytesToRead > sizeof(buffer)) {
-                bytesToRead = sizeof(buffer);
-            }
-
-            int bytesRead = client->read(
-                reinterpret_cast<uint8_t*>(buffer),
-                bytesToRead
-            );
-            if (bytesRead <= 0) {
-                continue;
-            }
-            lastDataTime = millis();
-
-            if (response.size() + static_cast<size_t>(bytesRead) >
-                maxResponseBytes) {
-                Serial.println("HTTP response is too large");
-                client->stop();
-                return {};
-            }
-            response.append(buffer, static_cast<size_t>(bytesRead));
-
-            if (contentLength > 0 && response.size() >= contentLength) {
-                break;
-            }
-        }
-
-        client->stop();
-    }
-    else {
-
-        Serial.println("Connection failed");
-    }
-
-    Serial.println("Return response");
-    Serial.print("Response body bytes: ");
-    Serial.println(response.length());
-
-    return response;
-}
-
-// Request
 std::vector<PaperCommand> Request::RequestConfig(std::string addr) {
+    TimedClient<WiFiClient> httpClient;
+    TimedClient<WiFiClientSecure> httpsClient;
+    // Provisioning currently has no CA-certificate mechanism.
+    httpsClient.setInsecure();
+    httpsClient.setHandshakeTimeout(requestTimeoutMs / 1000);
+    WiFiClient& client = addr.rfind("https://", 0) == 0
+        ? static_cast<WiFiClient&>(httpsClient) : httpClient;
+    HTTPClient request;
+    request.setReuse(false);
+    request.setConnectTimeout(requestTimeoutMs);
+    request.setTimeout(requestTimeoutMs);
+    if (!request.begin(client, addr.c_str())) {
+        return Templates::otherError("Invalid JSON URL.", addr);
+    }
 
-    std::string path;
-    std::string host = NormalizeHost(addr, path);
-    std::string body = httpGet(host, path);
+    Serial.println("HTTP: connecting and waiting for response headers...");
+    const unsigned long started = millis();
+    errno = 0;
+    int status = request.GET();
+    int connectionError = errno;
+    Serial.printf("HTTP: status %d after %lu ms\n", status, millis() - started);
+    bool connectionTimedOut = status == HTTPC_ERROR_CONNECTION_REFUSED &&
+        millis() - started >= static_cast<unsigned long>(requestTimeoutMs);
+    if (status < 200 || status >= 300) {
+        request.end();
+        if (status == 404) return Templates::notFound(addr);
+        if (status == HTTPC_ERROR_READ_TIMEOUT || status == 408 || status == 504 ||
+            (status < 0 && connectionError == ETIMEDOUT) || connectionTimedOut) {
+            return Templates::timeout(addr);
+        }
+        std::string message = status < 0
+            ? "Request failed: " + std::string(HTTPClient::errorToString(status).c_str())
+            : "Server returned HTTP " + std::to_string(status) + ".";
+        return Templates::otherError(message, addr);
+    }
+
+    ResponseBuffer response;
+    int contentLength = request.getSize();
+    if (contentLength > static_cast<int>(maxResponseBytes)) {
+        request.end();
+        return Templates::otherError("The server response is too large.", addr);
+    }
+    if (contentLength > 0) response.body.reserve(contentLength);
+    Serial.printf("HTTP: reading response body (Content-Length: %d)...\n", contentLength);
+    httpClient.beginResponse(requestTimeoutMs, responseTimeoutMs);
+    httpsClient.beginResponse(requestTimeoutMs, responseTimeoutMs);
+    int received = request.writeToStream(&response);
+    bool bodyTimedOut = httpClient.hasTimedOut() || httpsClient.hasTimedOut();
+    Serial.printf("HTTP: received %u bytes (result %d)\n",
+        static_cast<unsigned int>(response.body.size()), received);
+    request.end();
+    if (bodyTimedOut || received == HTTPC_ERROR_READ_TIMEOUT) {
+        Serial.println("HTTP: response timed out (5 seconds idle / 30 seconds total)");
+        return Templates::timeout(addr);
+    }
+    if (response.tooLarge) {
+        return Templates::otherError("The server response is too large.", addr);
+    }
+    if (received < 0 || (contentLength >= 0 && received != contentLength)) {
+        return Templates::otherError("Could not read the complete server response.", addr);
+    }
+    std::string& body = response.body;
+    if (body.empty()) return Templates::otherError("The server returned an empty response.", addr);
 
     std::vector<PaperCommand> commands;
-
-    if (body.empty()) {
-        Serial.println("Empty response");
-        return commands;
-    }
-
+    Serial.println("HTTP: parsing drawing commands...");
     JsonDocument doc;
     // ArduinoJson can parse a mutable buffer in place, avoiding a second copy
     // of large strings such as base64-encoded image data.
@@ -227,25 +116,36 @@ std::vector<PaperCommand> Request::RequestConfig(std::string addr) {
         Serial.print("Response begins with: ");
         Serial.println(body.substr(0, 200).c_str());
 
-        return commands;
+        return Templates::otherError("Invalid JSON response.", addr);
     }
 
     if (doc["version"].as<std::string>() != "2.0") {
         Serial.println("Unsupported document version (expected 2.0)");
-        return commands;
+        return Templates::otherError("Unsupported document version (expected 2.0).", addr);
     }
 
     JsonArray jsonCommands = doc["commands"];
     if (jsonCommands.isNull()) {
         Serial.println("JSON response has no 'commands' array");
-        return commands;
+        return Templates::otherError("The JSON response has no commands array.", addr);
     }
 
-    for (JsonObject item : jsonCommands) {
+    if (jsonCommands.size() == 0) {
+        return Templates::otherError("The JSON response contains no drawing commands.", addr);
+    }
+
+    for (JsonVariant value : jsonCommands) {
+        if (!value.is<JsonObject>() || !value["cmd"].is<const char*>()) {
+            return Templates::otherError("The JSON response contains an invalid command.", addr);
+        }
+        JsonObject item = value.as<JsonObject>();
 
         PaperCommand command;
 
         command.name = item["cmd"].as<const char*>();
+        if (cmdMap.find(command.name) == cmdMap.end()) {
+            return Templates::otherError("Unknown drawing command: " + command.name, addr);
+        }
 
         if (command.name == "draw_text") {
             JsonObject args = item["args"];
@@ -258,7 +158,8 @@ std::vector<PaperCommand> Request::RequestConfig(std::string addr) {
             text.wrap = (args["wrap"] | "word");
             text.overflow = (args["overflow"] | "ellipsis");
             text.lineSpacing = args["line_spacing"] | 0;
-            for (JsonObject source : args["spans"].as<JsonArray>()) {
+            JsonArray spans = args["spans"].as<JsonArray>();
+            for (JsonObject source : spans) {
                 PaperTextSpan span;
                 span.text = source["text"].as<std::string>();
                 span.family = (source["family"] | "sans");
@@ -272,7 +173,7 @@ std::vector<PaperCommand> Request::RequestConfig(std::string addr) {
             }
         }
 
-        if (item.containsKey("args")) {
+        if (item["args"].is<JsonObject>()) {
             JsonObject args = item["args"];
 
             for (JsonPair kv : args) {

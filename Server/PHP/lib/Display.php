@@ -20,7 +20,7 @@ final readonly class TextSpan implements JsonSerializable
 {
 	public function __construct(
 		public string $text,
-		public string $family = "sans",
+		public string $family = "helvetica",
 		public FontWeight $weight = FontWeight::REGULAR,
 		public int $size = 16,
 		public Color $color = Color::BLACK,
@@ -95,6 +95,36 @@ enum FillMode: string
 class Display
 {
 	private array $commands = [];
+
+	public function setRotate(int $rotate): self
+	{
+		if (!in_array($rotate, [0, 90, 180, 270], true)) {
+			throw new InvalidArgumentException('rotation must be 0, 90, 180, or 270 degrees');
+		}
+		$this->commands[] = ['cmd' => 'set_rotate', 'args' => ['rotate' => $rotate]];
+		return $this;
+	}
+
+	/** 0: none, 1: horizontal, 2: vertical, 3: both axes. */
+	public function setMirroring(int $mirror): self
+	{
+		if ($mirror < 0 || $mirror > 3) {
+			throw new InvalidArgumentException('mirror must be 0-3');
+		}
+		$this->commands[] = ['cmd' => 'set_mirroring', 'args' => ['mirror' => $mirror]];
+		return $this;
+	}
+
+	public function setPixel(int $x, int $y, Color $color = Color::BLACK): self
+	{
+		if ($color === Color::TRANSPARENT) {
+			throw new InvalidArgumentException('pixel color cannot be transparent');
+		}
+		$this->commands[] = ['cmd' => 'set_pixel', 'args' => [
+			'x' => $x, 'y' => $y, 'color' => $color,
+		]];
+		return $this;
+	}
 
 	private function colorToIndex(
 		Color $color

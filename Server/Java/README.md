@@ -74,7 +74,25 @@ public DisplayDocument display() {
 The library itself does not depend on Spring Boot.
 
 `RichTextSample.create()` provides a complete v2 example with mixed spans,
-UTF-8, alignment, wrapping, backgrounds, and decorations.
+UTF-8, alignment, backgrounds, letter spacing, underline, and strikeout. It
+includes every registered firmware command, with rotation and mirroring reset
+to their defaults. `TextSpan` defaults to the bundled `helvetica` family.
+
+To include the raster-text footer shown in the PHP sample, supply an image and
+the regular/bold font paths (paths below are relative to `Server/Java`):
+
+```java
+DisplayDocument sample = RichTextSample.create(
+    ImageLoader.load(Path.of("../../Media/logo.svg"), 120, 36),
+    new RasterFontFamily(
+        Path.of("../../Arduino/src/font/assets/Helvetica-Regular.ttf"),
+        Path.of("../../Arduino/src/font/assets/Helvetica-Bold.ttf")
+    )
+);
+```
+
+The firmware currently wraps text at glyph boundaries and does not render
+ellipsis markers; the sample uses clipping explicitly in its message and footer.
 
 ## PHP dashboard sample
 

@@ -31,8 +31,24 @@ public final class RichTextSample {
     }
 
     public static DisplayDocument create(BufferedImage image) {
+        return display(image).document();
+    }
+
+    /** Adds a server-rendered footer using caller-supplied font files. */
+    public static DisplayDocument create(BufferedImage image, RasterFontFamily fonts) {
+        return display(image)
+            .rasterText(TextBox.builder(398, 250, 370, 20)
+                .span(span("Server-rendered text · 21 °C", 12, Color.BLACK, FontWeight.REGULAR))
+                .build(), fonts)
+            .document();
+    }
+
+    private static Display display(BufferedImage image) {
         return new Display()
+            .setRotate(0)
+            .setMirroring(0)
             .clear(Color.WHITE)
+            .setPixel(12, 12, Color.RED)
             .text(TextBox.builder(20, 10, 752, 42)
                 .background(Color.BLACK)
                 .horizontalAlign(HorizontalAlign.CENTER)
@@ -64,14 +80,23 @@ public final class RichTextSample {
                 .background(Color.WHITE)
                 .verticalAlign(VerticalAlign.MIDDLE)
                 .lineSpacing(3)
+                .overflow(TextOverflow.CLIP)
                 .spans(List.of(
-                    TextSpan.builder("Dagens besked")
+                    TextSpan.builder("MESSAGE")
                         .family(DEVICE_FONT).weight(FontWeight.BOLD).size(18)
-                        .underline(true).build(),
-                    span("\nRødgrød med fløde – klar kl. 14:30.", 17,
-                        Color.BLACK, FontWeight.REGULAR)
+                        .underline(true).letterSpacing(2).build(),
+                    span("\nRødgrød med fløde · ÆØÅ æøå\n", 17,
+                        Color.BLACK, FontWeight.REGULAR),
+                    TextSpan.builder("14:30").family(DEVICE_FONT).size(17)
+                        .strikeout(true).build(),
+                    span("  Updated to 15:00", 17, Color.RED, FontWeight.REGULAR)
                 )).build())
-            .document();
+            .text(TextBox.builder(24, 248, 350, 20)
+                .horizontalAlign(HorizontalAlign.RIGHT)
+                .verticalAlign(VerticalAlign.BOTTOM)
+                .overflow(TextOverflow.CLIP)
+                .span(span("Native text · right / bottom aligned", 12, Color.BLACK, FontWeight.REGULAR))
+                .build());
     }
 
     private static TextSpan span(String text, int size, Color color, FontWeight weight) {
