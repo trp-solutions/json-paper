@@ -15,7 +15,7 @@ inline PaperCommand text(int y, int height, const std::string& value,
     command.text.height = height;
     PaperTextSpan span;
     span.text = value;
-    span.family = "helvetica";
+    span.family = "cozette";
     span.size = size;
     span.weight = weight;
     command.text.spans.push_back(span);
