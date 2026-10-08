@@ -11,6 +11,7 @@
 #include "src/e-paper/epd_5in79g.h"
 #include "src/e-paper/paper_command.h"
 #include "src/network/request.h"
+#include "src/util/clock.h"
 #include "logo.h"
 #include "templates/status.h"
 
@@ -23,7 +24,6 @@ char pass[] = CONFIG_AP_PASSWORD;
 #define SETTINGS_NAMESPACE "json-paper"
 #define SETTINGS_VERSION 1
 #define CLOCK_RETRY_SECONDS (15ULL * 60ULL)
-#define VALID_CLOCK_EPOCH 1704067200LL
 // Temporary diagnostic setting. Change to 0 to restore dual-band selection.
 #define FORCE_WIFI_2_4_GHZ 0
 
@@ -807,7 +807,7 @@ bool ensureClockIsValid() {
     "time.cloudflare.com"
   );
 
-  if (time(nullptr) >= VALID_CLOCK_EPOCH) {
+  if (time(nullptr) >= DeviceClock::validEpoch) {
     Serial.println("Using retained clock while NTP synchronizes");
     return true;
   }
@@ -815,7 +815,7 @@ bool ensureClockIsValid() {
   Serial.print("Synchronizing clock");
   unsigned long started = millis();
   while (millis() - started < 10000) {
-    if (time(nullptr) >= VALID_CLOCK_EPOCH) {
+    if (time(nullptr) >= DeviceClock::validEpoch) {
       Serial.println("\nClock synchronized");
       return true;
     }
@@ -886,7 +886,7 @@ void runRefreshCycle() {
     if (configMode) return;
     paintCommands(Templates::otherError("Could not connect to WiFi. Check the network settings."));
     time_t now = time(nullptr);
-    if (now >= VALID_CLOCK_EPOCH) {
+    if (now >= DeviceClock::validEpoch) {
       sleepUntilNextCron(now);
     } else {
       enterDeepSleep(CLOCK_RETRY_SECONDS);
