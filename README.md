@@ -21,7 +21,7 @@ See the [GitHub wiki](https://github.com/TRP-Solutions/json-paper/wiki) for proj
 | CLK |               GPIO6 |
 | DIN |               GPIO7 |
 | GND |                 GND |
-| VCC |                  5V |
+| VCC (Pin 1) |                  5V |
 
 
 | Accessory connection | ESP32-C5 connection |
