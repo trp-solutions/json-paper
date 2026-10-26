@@ -1429,10 +1429,6 @@
 		(uuid "44cbf6b8-9f5b-49d6-981e-29fec4039f2e")
 	)
 	(no_connect
-		(at 67.31 135.89)
-		(uuid "450ad6eb-fdb1-4c60-9704-167e2b411dd4")
-	)
-	(no_connect
 		(at 171.45 73.66)
 		(uuid "4a3979bc-2b8c-4336-8948-e5300ebabc25")
 	)
@@ -2064,7 +2060,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -2137,6 +2133,17 @@
 				)
 			)
 		)
+		(property "Symbol" "${SYMBOL_LIBRARY}:${SYMBOL_NAME}"
+			(at 91.44 123.19 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "50e49245-6c21-4fed-8151-2dcb0487afb7")
 		)
@@ -2155,7 +2162,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -2218,6 +2225,17 @@
 			)
 		)
 		(property "ItemNo" "503003"
+			(at 91.44 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Symbol" "${SYMBOL_LIBRARY}:${SYMBOL_NAME}"
 			(at 91.44 114.3 0)
 			(hide yes)
 			(show_name no)
@@ -2330,6 +2348,17 @@
 			)
 		)
 		(property "Part number" "53048-0910"
+			(at 205.74 120.65 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Symbol" "${SYMBOL_LIBRARY}:${SYMBOL_NAME}"
 			(at 205.74 120.65 0)
 			(hide yes)
 			(show_name no)
@@ -2474,6 +2503,17 @@
 				)
 			)
 		)
+		(property "Symbol" "${SYMBOL_LIBRARY}:${SYMBOL_NAME}"
+			(at 189.23 81.28 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "9be8c246-2ee5-420d-9454-1fb63dae63f1")
 		)
@@ -2501,7 +2541,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -2574,6 +2614,17 @@
 				)
 			)
 		)
+		(property "Symbol" "${SYMBOL_LIBRARY}:${SYMBOL_NAME}"
+			(at 81.28 114.3 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "b371df7a-1ddf-4ab3-a103-9af95e1bd55b")
 		)
@@ -2592,7 +2643,7 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
@@ -2655,6 +2706,17 @@
 			)
 		)
 		(property "ItemNo" "503003"
+			(at 81.28 123.19 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Symbol" "${SYMBOL_LIBRARY}:${SYMBOL_NAME}"
 			(at 81.28 123.19 0)
 			(hide yes)
 			(show_name no)
@@ -2764,6 +2826,17 @@
 			)
 		)
 		(property "Part number" "ESP32-C5-DevKitC-1-N8R8"
+			(at 146.05 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Symbol" "${SYMBOL_LIBRARY}:${SYMBOL_NAME}"
 			(at 146.05 57.15 0)
 			(hide yes)
 			(show_name no)

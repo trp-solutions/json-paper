@@ -1,0 +1,4 @@
+"Reference","Value","Symbol","Footprint","ItemNo","Manufacturer","Part number"
+"J1","PICO-9","CIS:Conn_01x09","CIS:Molex_PicoBlade_1x09_P1.25mm_Horizontal","501005","Molex","53048-0910"
+"SW1","WS-TATV","CIS:SW_SPST_4pin","CIS:SW_PUSH_6mm","420000","Wurth Elektronik","430156043726"
+"U1","ESP32-C5-DevKit","CIS:ESP32-C5-DevKitC-1","CIS:ESP32-C5-DevKitC-1","319000","Espressif Systems","ESP32-C5-DevKitC-1-N8R8"
